@@ -1,0 +1,93 @@
+import customtkinter as ctk
+import threading
+import time
+import random 
+
+
+def verify_layer_1_asv(audio_path):
+    time.sleep(2)
+    return True, 0.98 
+
+def verify_layer_2_rawnet3(audio_path):
+    time.sleep(3) 
+    return True, 0.95
+
+class CloudflarePopup(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+
+        self.title("VIRA AI Security")
+        self.geometry("450x300")
+        self.resizable(False, False)
+        
+        ctk.set_appearance_mode("dark")
+        
+        # Header
+        self.label_title = ctk.CTkLabel(self, text="VIRA Multi-Layer Verification", font=("Helvetica", 18, "bold"))
+        self.label_title.pack(pady=(20, 10))
+
+        # Progress & Status
+        self.status_label = ctk.CTkLabel(self, text="Initializing AI Engine...", font=("Helvetica", 12))
+        self.status_label.pack(pady=5)
+
+        self.progressbar = ctk.CTkProgressBar(self, width=350)
+        self.progressbar.pack(pady=20)
+        self.progressbar.set(0)
+
+        # Log visual ala terminal
+        self.log_box = ctk.CTkTextbox(self, width=350, height=80, font=("Consolas", 10))
+        self.log_box.pack(pady=10)
+        self.log_box.configure(state="disabled")
+
+        # Start process
+        threading.Thread(target=self.process_ai_layers, daemon=True).start()
+
+    def add_log(self, message):
+        self.log_box.configure(state="normal")
+        self.log_box.insert("end", f"> {message}\n")
+        self.log_box.see("end")
+        self.log_box.configure(state="disabled")
+
+    def process_ai_layers(self):
+        audio_target = "input_audio.wav" # File yang akan dicek
+        
+        # --- LAYER 1 ---
+        self.status_label.configure(text="Layer 1: Checking ASVspoof patterns...")
+        self.add_log("Loading Vira-Assist Model...")
+        self.progressbar.set(0.2)
+        
+        success1, score1 = verify_layer_1_asv(audio_target)
+        
+        if success1:
+            self.add_log(f"L1 Passed (Score: {score1})")
+            self.progressbar.set(0.5)
+        else:
+            self.fail_access("Layer 1: Spoof Detected")
+            return
+
+        # --- LAYER 2 ---
+        self.status_label.configure(text="Layer 2: Deep Analysis (RawNet3)...")
+        self.add_log("Analyzing Wavefake consistency...")
+        
+        success2, score2 = verify_layer_2_rawnet3(audio_target)
+        
+        if success2:
+            self.add_log(f"L2 Passed (Score: {score2})")
+            self.progressbar.set(1.0)
+            self.show_success()
+        else:
+            self.fail_access("Layer 2: Advanced Manipulation Detected")
+
+    def show_success(self):
+        self.status_label.configure(text="Access Granted", text_color="#22c55e")
+        self.add_log("Integrity Verified. Redirecting...")
+        self.after(2000, self.destroy)
+
+    def fail_access(self, reason):
+        self.status_label.configure(text="Access Denied!", text_color="#ef4444")
+        self.add_log(f"Security Alert: {reason}")
+        self.progressbar.configure(progress_color="#ef4444")
+
+if __name__ == "__main__":
+    app = CloudflarePopup()
+    app.mainloop()
